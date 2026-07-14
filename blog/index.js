@@ -1,63 +1,36 @@
-require('dotenv').config()
-const { Sequelize, Model, DataTypes } = require('sequelize')
 const express = require('express')
 const app = express()
 
+const { PORT } = require('./util/config')
+const { connectToDatabase } = require('./util/db')
+
+const blogsRouter = require('./controllers/blogs')
+const usersRouter = require('./controllers/users')
+const loginRouter = require('./controllers/login')
+const authorsRouter = require('./controllers/authors')
+const resetRouter = require('./controllers/reset')
+
+const { errorHandler } = require('./middleware')
+
 app.use(express.json())
 
-const sequelize = new Sequelize(process.env.DATABASE_URL, {
-  dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false
-    }
-  },
+app.use('/api/blogs', blogsRouter)
+app.use('/api/users', usersRouter)
+app.use('/api/login', loginRouter)
+app.use('/api/authors', authorsRouter)
+app.use('/api/reset', resetRouter)
+
+app.use(errorHandler)
+
+app.get('/', (req, res) => {
+  return res.status(200).end()
 })
 
-class Blog extends Model { }
+const start = async () => {
+  await connectToDatabase()
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`)
+  })
+}
 
-Blog.init({
-  id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true
-  },
-  title: {
-    type: DataTypes.TEXT,
-    allowNull: false
-  },
-  url: {
-    type: DataTypes.TEXT,
-    allowNull: false
-  },
-  author: {
-    type: DataTypes.TEXT
-  },
-  likes: {
-    type: DataTypes.INTEGER
-  }
-}, {
-  sequelize,
-  underscored: true,
-  timestamps: false,
-  modelName: 'blog'
-})
-
-app.get('/api/blogs', async (req, res) => {
-  const blogs = await Blog.findAll()
-  res.json(blogs)
-})
-
-app.post('/api/blogs', async (req, res) => {
-  try {
-    const blog = await Blog.create({ ...req.body, likes: 0 })
-    res.json(blog)
-  } catch (error) {
-    res.status(400).json({ error })
-  }
-})
-
-const PORT = process.env.PORT || 3001
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
-})
+start()
