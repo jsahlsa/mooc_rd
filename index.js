@@ -1,7 +1,7 @@
 const express = require('express')
 const app = express()
 
-const { PORT } = require('./util/config')
+const { PORT, HOST } = require('./util/config')
 const { connectToDatabase } = require('./util/db')
 
 const blogsRouter = require('./controllers/blogs')
@@ -28,7 +28,7 @@ app.get('/', (req, res) => {
 
 const start = async () => {
   await connectToDatabase()
-  app.listen(PORT, () => {
+  app.listen(PORT, HOST, () => {
     console.log(`Server running on port ${PORT}`)
   })
 }
